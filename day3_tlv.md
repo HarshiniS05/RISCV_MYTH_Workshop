@@ -262,7 +262,7 @@ Build a calculator performing arithmetic operations.
 
 ---
 
-# 📖 Theory
+# Theory
 
 The calculator combines:
 - Arithmetic units
@@ -422,7 +422,7 @@ Sequential logic introduces memory into digital circuits.
 
 ---
 
-# 🔹  Sequential Calculator
+#  Sequential Calculator
 
 ## Aim
 
@@ -509,7 +509,7 @@ Understand pipelining and timing abstraction.
 
 ---
 
-# 📖 Theory
+# Theory
 
 Pipelining divides computations into stages.
 
@@ -1114,7 +1114,7 @@ This lab demonstrates:
 
 ## Screenshot
 
-![Counter Calculator Pipeline](screenshots/day3/counter_calculator_pipeline.png)
+![Counter Calculator Pipeline](screenshots/day3/count_calcp_d.png)
 
 ---
 
@@ -1204,7 +1204,7 @@ This improves:
 
 ---
 
-# 🔍 Step-by-Step Explanation
+#  Step-by-Step Explanation
 
 ---
 
@@ -1425,7 +1425,7 @@ Next output
 
 ---
 
-# 📖 Concepts Demonstrated
+#  Concepts Demonstrated
 
 This lab demonstrates:
 - Multi-cycle pipelines
@@ -1443,7 +1443,7 @@ This lab demonstrates:
 
 ---
 
-# 🧠 Key Learning
+#  Key Learning
 
 Through this lab, the following concepts were learned:
 
@@ -1456,7 +1456,7 @@ Through this lab, the following concepts were learned:
 
 ---
 
-# 🔹  Validity
+#   Validity
 
 ## Aim
 
@@ -1464,7 +1464,7 @@ Control execution of valid pipeline data.
 
 ---
 
-# 📖 Theory
+#  Theory
 
 Not every pipeline stage contains valid data.
 
@@ -1489,7 +1489,7 @@ Benefits:
 - Clock gating support
 
 ---
-# 🔹 Lab – Calculator with Single-Value Memory
+# Lab – Calculator with Single-Value Memory
 
 ## Aim
 
@@ -1505,7 +1505,7 @@ This lab demonstrates:
 
 ---
 
-# 📖 Theory
+# Theory
 
 Real calculators often provide:
 - Memory store
@@ -1528,12 +1528,48 @@ The design behaves similarly to:
 ## Code
 
 ```tlv
-// Paste your Calculator with Memory code here
+\TLV
+   |calc
+
+      @0
+         $reset = *reset;
+
+         // ALU operations
+         $sum[31:0]  = $val1 + $val2;
+         $diff[31:0] = $val1 - $val2;
+         $prod[31:0] = $val1 * $val2;
+         $quot[31:0] = ($val2 != 0) ? ($val1 / $val2) : 32'b0;
+
+      @1
+         // Valid for memory write
+         $valid = ($op != 3'b100);
+
+         // Output mux
+         $out[31:0] =
+              ($op == 3'b000) ? $sum        :
+              ($op == 3'b001) ? $diff       :
+              ($op == 3'b010) ? $prod       :
+              ($op == 3'b011) ? $quot       :
+              ($op == 3'b100) ? >>2$mem     :
+                                 32'b0;
+
+      @2
+         // Single value memory
+         $mem[31:0] =
+              $reset ? 32'b0 :
+              $valid ? >>1$out :
+                       >>1$mem;
+
+   // Visualization
+   //m4+cal_viz(@3)
+
+   *passed = *cyc_cnt > 80;
+   *failed = 1'b0;
 ```
 
 ---
 
-# 🔍 Step-by-Step Explanation
+# Step-by-Step Explanation
 
 ---
 
@@ -1832,7 +1868,7 @@ These are essential for:
 
 ## Screenshot
 
-![Calculator Memory](screenshots/day3/calculator_memory.png)
+![Calculator Memory](screenshots/day3/mem_calc_d.png)
 
 ---
 
@@ -1902,7 +1938,7 @@ TL-Verilog simplifies retiming significantly compared to SystemVerilog.
 
 ---
 
-# 🧠 Overall Key Learnings
+#  Overall Key Learnings
 
 Through Day 3 labs, the following concepts were learned:
 
