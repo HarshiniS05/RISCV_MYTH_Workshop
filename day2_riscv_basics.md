@@ -48,8 +48,7 @@ RTL / Hardware
 ```
 
 ### Screenshot
-
-<!-- Add screenshot: screenshots/day2/2.png -->
+![] (screenshots/day2/2.png)
 
 ---
 
@@ -86,7 +85,7 @@ returning.
 
 ### Screenshot
 
-<!-- Add screenshot: screenshots/day2/3.png -->
+![](screenshots/day2/3.png)
 
 ---
 
@@ -253,7 +252,7 @@ Return a0 to main C program
 End
 ```
 
-### C Source File: `1to9_custom.c`
+### C Source File: `1ton_custom.c`
 
 ```c
 #include <stdio.h>
@@ -305,9 +304,8 @@ loop:
 
 ### Screenshot
 
-<!-- Add screenshot: screenshots/day2/4.png -->
-<!-- Add screenshot: screenshots/day2/5.png -->
-
+![](screenshots/day2/4.png)
+![]( screenshots/day2/5.png)
 
 ---
 
@@ -375,11 +373,11 @@ vim firmware32.hex
 
 ### Screenshot
 
-<!-- Add screenshot: screenshots/day2/6.png -->
-<!-- Add screenshot: screenshots/day2/7.png -->
-<!-- Add screenshot: screenshots/day2/8.png -->
-<!-- Add screenshot: screenshots/day2/picorv32_sim_output.png -->
-<!-- Add screenshot: screenshots/day2/firmware_hex_view.png -->
+![](screenshots/day2/6.png) 
+![](screenshots/day2/7.png)
+![]screenshots/day2/8.png)
+![](screenshots/day2/picorv32_sim_output.png)
+![](screenshots/day2/firmware_hex_view.png )
 
 ---
 
