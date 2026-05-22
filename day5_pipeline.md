@@ -157,7 +157,7 @@ $pc[31:0] = >>1$reset    ? 32'd0         :
             >>1$taken_br ? >>1$br_tgt_pc :
                            >>1$pc + 32'd4;
 ```
-![](screenshots/day5/Lab_Branches_PC MUX_update.png)
+![](screenshots/day5/update.png)
 ---
 
 ## Day 5 Labs — Pipelining
@@ -302,7 +302,7 @@ reset deasserts. `>>3$valid` recycles the valid pulse every 3 cycles.
 \SV
    endmodule
 ```
-![](screenshots/day5/3_Cycle RISC_V.png)
+![](screenshots/day5/Cycle_RISC_V.png)
 ---
 
 ## Lab: 3-Cycle RISC-V — Pipelined Stages (Slide 37)
@@ -529,7 +529,7 @@ ago wrote to the same register and forwarding `$result` directly.
                                                    $rf_rd_data2;
 
 ```
-![](screenshots/day5/lab Register File Bypass.png)
+![](screenshots/day5/Register_File_Bypass.png)
 ---
 
 ## Lab: Branches — ~1 IPC (Slide 42)
@@ -624,7 +624,7 @@ $is_jal   = $dec_bits ==? 11'bx_xxx_1101111;
 $is_jalr  = $dec_bits ==? 11'bx_000_1100111;
 $is_load  = $opcode   ==  7'b0000011;
 ```
-![](screenshots/day5/Lab Complete Instruction Decode.png)
+![](screenshots/day5/instruction_decode.png)
 ---
 
 ## Lab: Complete ALU (Slide 45)
@@ -672,7 +672,7 @@ $result[31:0] =
      ($is_load || $is_s_instr) ? $src1_value + $imm :
                   32'bx;
 ```
-![](screenshots/day5/ Lab Complete ALU.png)
+![](screenshots/day5/Complete_ALU.png)
 ---
 
 ## Lab: Load Redirect (Slide 48)
@@ -708,7 +708,7 @@ $pc[31:0] = >>1$reset          ? 32'd0         :
             >>3$valid_load     ? >>3$inc_pc    :
                                  >>1$pc + 32'd4;
 ```
-![](screenshots/day5/ Lab Load Redirect (Clear valid in load shadow.png)
+![](screenshots/day5/Load_Redirect.png)
 ---
 
 ## Lab: Load Data — RF Write MUX (Slide 49)
@@ -733,7 +733,7 @@ $rf_wr_en         = ($valid && $rd_valid && ($rd != 5'b00000)) ||
 $rf_wr_index[4:0] = >>2$valid_load ? >>2$rd    : $rd;
 $rf_wr_data[31:0] = >>2$valid_load ? $ld_data  : $result;
 ```
-![](screenshots/day5/Lab Load Data (RF write MUX + DMem read.png)
+![](screenshots/day5/Load_Data.png)
 ---
 
 ## Lab: DMem Connect (Slide 51)
@@ -765,7 +765,7 @@ $dmem_rd_en         = $is_load;
 // @5
 $ld_data[31:0] = $dmem_rd_data[31:0];
 ```
-![](screenshots/day5/Lab DMem Connect.png)
+![](screenshots/day5/DMem_Connect.png)
 ### Macros
 
 ```tlv
