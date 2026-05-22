@@ -48,7 +48,7 @@ RTL / Hardware
 ```
 
 ### Screenshot
-![] (screenshots/day2/2.png)
+![](screenshots/day2/2.png)
 
 ---
 
@@ -305,7 +305,7 @@ loop:
 ### Screenshot
 
 ![](screenshots/day2/4.png)
-![]( screenshots/day2/5.png)
+![](screenshots/day2/5.png)
 
 ---
 
@@ -375,7 +375,7 @@ vim firmware32.hex
 
 ![](screenshots/day2/6.png) 
 ![](screenshots/day2/7.png)
-![]screenshots/day2/8.png)
+![](screenshots/day2/8.png)
 ![](screenshots/day2/picorv32_sim_output.png)
 ![](screenshots/day2/firmware_hex_view.png )
 
