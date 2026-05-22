@@ -138,7 +138,7 @@ $taken_br = $is_beq  ? ($src1_value == $src2_value)                             
             $is_bgeu ? ($src1_value >= $src2_value)                                         :
                        1'b0;
 ```
-![](screenshots/day5/Lab_Branches(Taken Branch Logic.png)
+![](screenshots/day5/Lab_Branches.png)
 ---
 
 ### Lab: Branch Target PC and PC MUX (Slide 22)
@@ -157,7 +157,7 @@ $pc[31:0] = >>1$reset    ? 32'd0         :
             >>1$taken_br ? >>1$br_tgt_pc :
                            >>1$pc + 32'd4;
 ```
-![](screenshots/day5/Lab_Branches(Branch Target PC + PC MUX update.png)
+![](screenshots/day5/Lab_Branches_PC MUX_update.png)
 ---
 
 ## Day 5 Labs — Pipelining

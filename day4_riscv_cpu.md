@@ -631,7 +631,7 @@ When `$rs2_valid` is false, `$rs2` is **X (don't-care)**. This has two benefits:
 
 With when conditions, signals that are X in the waveform are shown differently from valid 0s — this makes simulation debugging much cleaner.
 
-> 📸 `![instruction decode with when](screenshots/day4/instruction decode with when.png`
+> 📸 `![instruction decode with when](screenshots/day4/instruction_decode_with_when.png)
 
 ---
 
