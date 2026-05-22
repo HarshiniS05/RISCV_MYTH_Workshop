@@ -11,11 +11,7 @@
 - [Lab 5 — Instruction Field Decode (Basic)](#lab-5--instruction-field-decode-basic)
 - [Lab 6 — Instruction Field Decode with When Conditions](#lab-6--instruction-field-decode-with-when-conditions)
 - [Lab 7 — Full Instruction Decode](#lab-7--full-instruction-decode)
-- [Lab 8 — Register File Read](#lab-8--register-file-read)
-- [Lab 9 — ALU](#lab-9--alu)
-- [Lab 10 — Register File Write](#lab-10--register-file-write)
-- [Lab 11 — Branches](#lab-11--branches)
-- [Key Takeaways](#key-takeaways)
+
 
 ---
 
@@ -156,7 +152,7 @@ Memory is **byte-addressed**. One RISC-V instruction occupies 4 bytes (32 bits).
 
 After reset deasserts, the PC waveform should show: `0 → 4 → 8 → 12 → 16 ...`
 
-> 📸 `screenshots/day4/pc_couter_d.png`
+> 📸 ![](screenshots/day4/pc_couter_d.png)
 
 ---
 
@@ -237,7 +233,7 @@ Bits `[1:0]` of the PC are always `00` for properly aligned instructions, so we 
 
 `$instr` should show the binary encoding of the first instruction (`ADD r10, r0, r0`) on the first valid cycle. Check the Makerchip diagram view to confirm the IMem is wired up.
 
-> 📸 `screenshots/day4/fetch_d.png`
+> 📸 ![](screenshots/day4/fetch_d.png)
 
 ---
 
@@ -330,7 +326,7 @@ instr[6:2] ==? 5'b0000x   →  matches 00000 and 00001  (LOAD and LOAD-FP)
 
 In the waveform, verify that `$is_r_instr` is high for ADD instructions and `$is_b_instr` is high for the BLT instruction in the test program.
 
-> 📸 `screenshots/day4/incrst_de_d.png`
+> 📸 ![Instruction Type Decode](screenshots/day4/incrst_de_d.png)
 
 ---
 
@@ -427,7 +423,7 @@ Note that B and J immediates have an implicit `0` as the LSB — branches and ju
 
 Check `$imm` for an ADDI instruction — for `ADDI r12, r10, 10`, you should see `$imm = 32'd10`. For the BLT branch offset, you should see a negative value (sign-extended backwards offset).
 
-> 📸 `screenshots/day4/lab2_de_d.png`
+> 📸 ![Instruction Immediate Decode](screenshots/day4/lab2_de_d.png)
 
 ---
 
@@ -519,7 +515,7 @@ Now extract the register indices and function codes from the instruction. These 
 
 Verify that for the first ADD instruction, `$rs1 = 10` (r10), `$rs2 = 0` (r0), and `$rd = 10`.
 
-> 📸 `screenshots/day4/Instruction Field Decode (basic).png`
+> 📸![Instruction Field Decode](screenshots/day4/Instruction Field Decode ).png
 
 ---
 
@@ -635,7 +631,7 @@ When `$rs2_valid` is false, `$rs2` is **X (don't-care)**. This has two benefits:
 
 With when conditions, signals that are X in the waveform are shown differently from valid 0s — this makes simulation debugging much cleaner.
 
-> 📸 `screenshots/day4/instruction decode with when.png`
+> 📸 `![instruction decode with when](screenshots/day4/instruction decode with when.png`
 
 ---
 
@@ -797,7 +793,7 @@ For instructions where funct7 doesn't apply (I-type, branches, etc.), we use `x`
 
 Verify `$is_add` goes high for ADD instructions, `$is_addi` for ADDI, and `$is_blt` for the BLT in the test program.
 
-> 📸 `screenshots/day4/decode_dbits.png`
+>![Decode Dbits](screenshots/day4/decode_dbits.png)
 
 ---
 

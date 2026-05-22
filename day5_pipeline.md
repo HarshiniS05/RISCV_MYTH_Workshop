@@ -53,15 +53,21 @@ register is initialised to its own index (x5 = 5).
 #### Code
 
 ```tlv
-$rf_rd_en1         = $rs1_valid;
-$rf_rd_index1[4:0] = $rs1;
-$rf_rd_en2         = $rs2_valid;
-$rf_rd_index2[4:0] = $rs2;
+      // ---- REGISTER FILE READ ----
+         // Enable reads only when the source register field is valid for this instruction
+         // This prevents reading garbage for instruction types that don't use rs1/rs2
+         $rf_rd_en1 = $rs1_valid;
+         $rf_rd_index1[4:0] = $rs1;
 
-$src1_value[31:0] = $rf_rd_data1;
-$src2_value[31:0] = $rf_rd_data2;
+         $rf_rd_en2 = $rs2_valid;
+         $rf_rd_index2[4:0] = $rs2;
+
+         // Capture the values read from the register file
+         // The RF macro drives $rf_rd_data1 and $rf_rd_data2 based on the above
+         $src1_value[31:0] = $rf_rd_data1;
+         $src2_value[31:0] = $rf_rd_data2;
 ```
-
+![](screenshots/day5/reg-slide-16-17.png)
 ---
 
 ### Lab: ALU — ADD and ADDI (Slide 18)
@@ -73,11 +79,16 @@ Initial ALU handles only ADD and ADDI. All other opcodes produce `32'bx`.
 #### Code
 
 ```tlv
-$result[31:0] = $is_addi ? $src1_value + $imm       :
-                $is_add  ? $src1_value + $src2_value :
-                           32'bx;
-```
+// ADDI — add register value and sign-extended immediate
+         // ADD  — add two register values together
+         // All other opcodes → don't care (32'bx)
+         // =============================================
+         $result[31:0] = $is_addi ? $src1_value + $imm        :
+                         $is_add  ? $src1_value + $src2_value  :
+                                    32'bx;
 
+```
+![](screenshots/day5/ALU.png)
 ---
 
 ### Lab: Register File Write (Slide 20)
@@ -89,11 +100,15 @@ RF write enabled only when `rd` is valid and not x0 (x0 hardwired zero).
 #### Code
 
 ```tlv
-$rf_wr_en         = $rd_valid && ($rd != 5'b00000);
-$rf_wr_index[4:0] = $rd;
-$rf_wr_data[31:0] = $result;
+/ Condition 1: instruction must have a valid rd field
+         // Condition 2: destination must not be x0 (always-zero reg)
+         //              x0 writes are silently ignored in RISC-V
+         // =============================================
+         $rf_wr_en         = $rd_valid && ($rd != 5'b00000);
+         $rf_wr_index[4:0] = $rd;
+         $rf_wr_data[31:0] = $result;
 ```
-
+![](screenshots/day5/REG-WRITE.png)
 ---
 
 ### Lab: Branches — Taken Branch Logic (Slide 21)
@@ -123,7 +138,7 @@ $taken_br = $is_beq  ? ($src1_value == $src2_value)                             
             $is_bgeu ? ($src1_value >= $src2_value)                                         :
                        1'b0;
 ```
-
+![](screenshots/day5/Slide 21 — Lab Branches (Taken Branch Logic.png)
 ---
 
 ### Lab: Branch Target PC and PC MUX (Slide 22)
@@ -142,7 +157,7 @@ $pc[31:0] = >>1$reset    ? 32'd0         :
             >>1$taken_br ? >>1$br_tgt_pc :
                            >>1$pc + 32'd4;
 ```
-
+![](screenshots/day5/Slide 22 — Lab Branches (Branch Target PC + PC MUX update.png)
 ---
 
 ## Day 5 Labs — Pipelining
@@ -159,9 +174,17 @@ reset deasserts. `>>3$valid` recycles the valid pulse every 3 cycles.
 ### Code
 
 ```tlv
-$start = >>1$reset && !$reset;
+/ =============================================
+         // SLIDE 33: $start and $valid signals
+         // $start = last cycle had reset, this cycle does not
+         //          → marks the very first valid instruction cycle
+         // $valid = 0 during reset
+         //          1 on $start (first active cycle)
+         //          otherwise recycle >>3$valid (every 3rd cycle valid)
+         // =============================================
+         $start = >>1$reset && !$reset;
 
-$valid = $reset ? 1'b0
+         $valid = $reset ? 1'b0
                 : $start ? 1'b1
                          : >>3$valid;
 ```
@@ -279,7 +302,7 @@ $valid = $reset ? 1'b0
 \SV
    endmodule
 ```
-
+![](screenshots/day5/Slide 36 — Lab 3-Cycle RISC-V (valid gating.png.png)
 ---
 
 ## Lab: 3-Cycle RISC-V — Pipelined Stages (Slide 37)
@@ -301,12 +324,11 @@ PC MUX uses `>>3` feedback. `$valid_taken_br` computed at @2 using `>>2$valid`.
 ### Full TL-Verilog File
 
 ```tlv
-\m4_TLV_version 1d: tl-x.org
-\SV
-   m4_include_lib(['https://raw.githubusercontent.com/BalaDhinesh/RISC-V_MYTH_Workshop/master/tlv_lib/risc-v_shell_lib.tlv'])
+
 \SV
    m4_makerchip_module
 \TLV
+   
    m4_asm(ADD, r10, r0, r0)
    m4_asm(ADD, r14, r10, r0)
    m4_asm(ADDI, r12, r10, 1010)
@@ -320,30 +342,56 @@ PC MUX uses `>>3` feedback. `$valid_taken_br` computed at @2 using `>>2$valid`.
 
    |cpu
       @0
+         // =============================================
+         // STAGE 0: Reset, Valid, PC
+         // =============================================
          $reset = *reset;
-         $start = >>1$reset && !$reset;
-         $valid = $reset ? 1'b0 : $start ? 1'b1 : >>3$valid;
 
-         $pc[31:0] = >>1$reset          ? 32'd0         :
-                     >>3$valid_taken_br ? >>3$br_tgt_pc :
-                                          >>3$inc_pc;
+         $start = >>1$reset && !$reset;
+
+         // Valid pulses every 3 cycles using >>3 feedback
+         $valid = $reset ? 1'b0
+                         : $start ? 1'b1
+                                  : >>3$valid;
+
+         // PC MUX:
+         // Priority 1 — reset            → 0
+         // Priority 2 — valid taken branch 3 cycles ago → branch target
+         // Priority 3 — normal           → previous incremented PC
+         $pc[31:0] = >>1$reset
+                     ? 32'd0
+                     : >>3$valid_taken_br
+                       ? >>3$br_tgt_pc
+                       : >>3$inc_pc;
 
          $imem_rd_en = !$reset;
          $imem_rd_addr[M4_IMEM_INDEX_CNT-1:0] = $pc[M4_IMEM_INDEX_CNT+1:2];
 
       @1
-         $instr[31:0]  = $imem_rd_data[31:0];
+         // =============================================
+         // STAGE 1: Fetch + Decode
+         // =============================================
+
+         // FETCH
+         $instr[31:0] = $imem_rd_data[31:0];
+
+         // Sequential PC — needed for branch target and next PC
          $inc_pc[31:0] = $pc + 32'd4;
 
-         $is_i_instr = $instr[6:2] ==? 5'b0000x || $instr[6:2] ==? 5'b001x0 ||
-                       $instr[6:2] ==? 5'b11001 || $instr[6:2] ==? 5'b11100;
-         $is_r_instr = $instr[6:2] ==? 5'b01011 || $instr[6:2] ==? 5'b0110x ||
+         // Instruction type decode
+         $is_i_instr = $instr[6:2] ==? 5'b0000x ||
+                       $instr[6:2] ==? 5'b001x0 ||
+                       $instr[6:2] ==? 5'b11001 ||
+                       $instr[6:2] ==? 5'b11100;
+         $is_r_instr = $instr[6:2] ==? 5'b01011 ||
+                       $instr[6:2] ==? 5'b0110x ||
                        $instr[6:2] ==? 5'b10100;
          $is_s_instr = $instr[6:2] ==? 5'b0100x;
          $is_b_instr = $instr[6:2] ==? 5'b11000;
          $is_j_instr = $instr[6:2] ==? 5'b11011;
          $is_u_instr = $instr[6:2] ==? 5'b0x101;
 
+         // Immediate value construction
          $imm[31:0] = $is_i_instr ? { {21{$instr[31]}}, $instr[30:20] } :
                       $is_s_instr ? { {21{$instr[31]}}, $instr[30:25], $instr[11:7] } :
                       $is_b_instr ? { {20{$instr[31]}}, $instr[7], $instr[30:25], $instr[11:8], 1'b0 } :
@@ -351,19 +399,28 @@ PC MUX uses `>>3` feedback. `$valid_taken_br` computed at @2 using `>>2$valid`.
                       $is_j_instr ? { {12{$instr[31]}}, $instr[19:12], $instr[20], $instr[30:21], 1'b0 } :
                                     32'b0;
 
+         // Field validity flags
          $rs1_valid    = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr;
          $rs2_valid    = $is_r_instr || $is_s_instr || $is_b_instr;
          $rd_valid     = $is_r_instr || $is_i_instr || $is_u_instr || $is_j_instr;
          $funct3_valid = $is_r_instr || $is_i_instr || $is_s_instr || $is_b_instr;
          $funct7_valid = $is_r_instr;
 
-         ?$rs1_valid    $rs1[4:0]    = $instr[19:15];
-         ?$rs2_valid    $rs2[4:0]    = $instr[24:20];
-         ?$rd_valid     $rd[4:0]     = $instr[11:7];
-         ?$funct3_valid $funct3[2:0] = $instr[14:12];
-         ?$funct7_valid $funct7[6:0] = $instr[31:25];
+         // Register field extraction (conditional on validity)
+         ?$rs1_valid
+            $rs1[4:0] = $instr[19:15];
+         ?$rs2_valid
+            $rs2[4:0] = $instr[24:20];
+         ?$rd_valid
+            $rd[4:0]  = $instr[11:7];
+         ?$funct3_valid
+            $funct3[2:0] = $instr[14:12];
+         ?$funct7_valid
+            $funct7[6:0] = $instr[31:25];
 
-         $opcode[6:0]    = $instr[6:0];
+         $opcode[6:0] = $instr[6:0];
+
+         // Instruction identification bits
          $dec_bits[10:0] = {$funct7[5], $funct3, $opcode};
 
          $is_beq  = $dec_bits ==? 11'bx_000_1100011;
@@ -376,19 +433,32 @@ PC MUX uses `>>3` feedback. `$valid_taken_br` computed at @2 using `>>2$valid`.
          $is_add  = $dec_bits ==? 11'b0_000_0110011;
 
       @2
+         // =============================================
+         // STAGE 2: RF Read + ALU + Branch Compare
+         // =============================================
+
+         // RF READ
+         // Read port 1 — source register 1
          $rf_rd_en1         = $rs1_valid;
          $rf_rd_index1[4:0] = $rs1;
+
+         // Read port 2 — source register 2
          $rf_rd_en2         = $rs2_valid;
          $rf_rd_index2[4:0] = $rs2;
-         $src1_value[31:0]  = $rf_rd_data1;
-         $src2_value[31:0]  = $rf_rd_data2;
 
+         // Latch read data into source value registers
+         $src1_value[31:0] = $rf_rd_data1;
+         $src2_value[31:0] = $rf_rd_data2;
+
+         // ALU — only ADD and ADDI implemented for now
          $result[31:0] = $is_addi ? $src1_value + $imm       :
                          $is_add  ? $src1_value + $src2_value :
                                     32'bx;
 
+         // Branch target = current instruction PC + B-type immediate
          $br_tgt_pc[31:0] = $pc + $imm;
 
+         // Branch condition evaluation
          $taken_br = $is_beq  ? ($src1_value == $src2_value)                                         :
                      $is_bne  ? ($src1_value != $src2_value)                                         :
                      $is_blt  ? (($src1_value < $src2_value) ^ ($src1_value[31] != $src2_value[31])) :
@@ -397,15 +467,24 @@ PC MUX uses `>>3` feedback. `$valid_taken_br` computed at @2 using `>>2$valid`.
                      $is_bgeu ? ($src1_value >= $src2_value)                                         :
                                 1'b0;
 
+         // Gate branch redirect with valid signal
+         // >>2$valid brings @0 valid forward to this @2 stage
          $valid_taken_br = >>2$valid && $taken_br;
 
       @3
+         // =============================================
+         // STAGE 3: RF Write
+         // >>3$valid brings the @0 valid of this instruction
+         // forward to @3 to gate the write correctly
+         // x0 writes are always suppressed (hardwired zero)
+         // =============================================
          $rf_wr_en         = >>3$valid && $rd_valid && ($rd != 5'b00000);
          $rf_wr_index[4:0] = $rd;
          $rf_wr_data[31:0] = $result;
 
    *passed = *cyc_cnt > 40;
    *failed = 1'b0;
+
 
    |cpu
       m4+imem(@1)
@@ -414,7 +493,7 @@ PC MUX uses `>>3` feedback. `$valid_taken_br` computed at @2 using `>>2$valid`.
 \SV
    endmodule
 ```
-
+![](screenshots/day5/Lab 3-Cycle RISC-37.png)
 ---
 
 ## Lab: Register File Bypass (Slide 39)
@@ -427,17 +506,30 @@ ago wrote to the same register and forwarding `$result` directly.
 ### Code
 
 ```tlv
-$src1_value[31:0] =
-     (>>1$rf_wr_en && (>>1$rd == $rs1)) ? >>1$result :
-     (>>2$rf_wr_en && (>>2$rd == $rs1)) ? >>2$result :
-                                          $rf_rd_data1;
+// If the instruction 1 cycle ago wrote to RF AND
+         // its destination matches our source register,
+         // forward that result instead of stale RF data.
+         // >>1 refers to the immediately previous instruction.
+         // >>2 refers to two instructions ago.
+         // =============================================
 
-$src2_value[31:0] =
-     (>>1$rf_wr_en && (>>1$rd == $rs2)) ? >>1$result :
-     (>>2$rf_wr_en && (>>2$rd == $rs2)) ? >>2$result :
-                                          $rf_rd_data2;
+         // Bypass for src1:
+         // Case 1: instruction 1 ago wrote to rd == rs1 → use >>1$result
+         // Case 2: instruction 2 ago wrote to rd == rs1 → use >>2$result
+         // Default: use RF read data
+         $src1_value[31:0] =
+              (>>1$rf_wr_en && (>>1$rd == $rs1)) ? >>1$result :
+              (>>2$rf_wr_en && (>>2$rd == $rs1)) ? >>2$result :
+                                                   $rf_rd_data1;
+
+         // Bypass for src2:
+         $src2_value[31:0] =
+              (>>1$rf_wr_en && (>>1$rd == $rs2)) ? >>1$result :
+              (>>2$rf_wr_en && (>>2$rd == $rs2)) ? >>2$result :
+                                                   $rf_rd_data2;
+
 ```
-
+![](screenshots/day5/Slide 39 — Lab Register File Bypass.png)
 ---
 
 ## Lab: Branches — ~1 IPC (Slide 42)
@@ -461,6 +553,12 @@ loop:  add   a4,a3,a4   P D R E W
 ### Code
 
 ```tlv
+  // =============================================
+         // whether either of the 2 previous instructions
+         // had a valid taken branch — if so this
+         // instruction is a bubble (invalid).
+         // $valid_taken_br still gates the branch redirect.
+         // =============================================
 // PC every cycle
 $pc[31:0] = >>1$reset          ? 32'd0         :
             >>3$valid_taken_br ? >>3$br_tgt_pc :
@@ -526,7 +624,7 @@ $is_jal   = $dec_bits ==? 11'bx_xxx_1101111;
 $is_jalr  = $dec_bits ==? 11'bx_000_1100111;
 $is_load  = $opcode   ==  7'b0000011;
 ```
-
+![](screenshots/day5/Slide 44 — Lab Complete Instruction Decode.png)
 ---
 
 ## Lab: Complete ALU (Slide 45)
@@ -574,7 +672,7 @@ $result[31:0] =
      ($is_load || $is_s_instr) ? $src1_value + $imm :
                   32'bx;
 ```
-
+![](screenshots/day5/Slide 45 — Lab Complete ALU.png)
 ---
 
 ## Lab: Load Redirect (Slide 48)
@@ -595,6 +693,11 @@ add   r5,r2,r3  <- re-fetched here
 ### Code
 
 ```tlv
+ // =============================================
+         // Creates 2 invalid shadow cycles just like branch.
+         // $valid clears in the 2 cycles after a valid load.
+         // =============================================
+
 $valid_load = $valid && $is_load;
 
 $valid = !(>>1$valid_taken_br || >>2$valid_taken_br ||
@@ -605,7 +708,7 @@ $pc[31:0] = >>1$reset          ? 32'd0         :
             >>3$valid_load     ? >>3$inc_pc    :
                                  >>1$pc + 32'd4;
 ```
-
+![](screenshots/day5/Slide 48 — Lab Load Redirect (Clear valid in load shadow.png)
 ---
 
 ## Lab: Load Data — RF Write MUX (Slide 49)
@@ -618,13 +721,19 @@ the bubble slot 2 cycles after a valid load.
 ### Code
 
 ```tlv
+// Normal valid instruction  → write $result
+         // 2 cycles after valid load → write $ld_data
+         //   (instruction is invalid/bubble but we still
+         //    need to commit the loaded value to RF)
+         // >>2$valid_load means the load was 2 cycles ago
+         // =============================================
 $rf_wr_en         = ($valid && $rd_valid && ($rd != 5'b00000)) ||
                     >>2$valid_load;
 
 $rf_wr_index[4:0] = >>2$valid_load ? >>2$rd    : $rd;
 $rf_wr_data[31:0] = >>2$valid_load ? $ld_data  : $result;
 ```
-
+![](screenshots/day5/Slide 49 — Lab Load Data (RF write MUX + DMem read.png)
 ---
 
 ## Lab: DMem Connect (Slide 51)
@@ -656,7 +765,7 @@ $dmem_rd_en         = $is_load;
 // @5
 $ld_data[31:0] = $dmem_rd_data[31:0];
 ```
-
+![](screenshots/day5/Slide 51 — Lab DMem Connect.png)
 ### Macros
 
 ```tlv
@@ -729,7 +838,7 @@ $pc[31:0] = >>1$reset
                     ? >>3$jalr_tgt_pc
                     : >>1$pc + 32'd4;
 ```
-
+![](screenshots/day5/risc.png)
 ---
 
 ## Final Testbench
@@ -775,29 +884,6 @@ Expected: `r10 = r17 = 45 = 0x2D`
 | Control — branch | 2 wrong instructions fetched | Invalidate 2 shadow cycles; redirect PC |
 | Control — load | Data unavailable 2 cycles | Invalidate 2 shadow cycles; re-fetch |
 | Control — jump | 2 wrong instructions fetched | Invalidate 2 shadow cycles; redirect PC |
-
----
-
-## Lab File Index
-
-| File | Slide | Description |
-|------|-------|-------------|
-| `day4/rf_read.tlv` | 16–17 | Register file read |
-| `day4/alu_add_addi.tlv` | 18 | ALU — ADD and ADDI |
-| `day4/rf_write.tlv` | 20 | Register file write |
-| `day4/taken_branch.tlv` | 21 | Taken branch logic |
-| `day4/branch_pc.tlv` | 22 | Branch target PC and PC MUX |
-| `day5/3cycle_valid.tlv` | 33 | 3-cycle valid signal |
-| `day5/3cycle_riscv.tlv` | 37 | Pipelined CPU @0–@3 |
-| `day5/rf_bypass.tlv` | 39 | Register file bypass |
-| `day5/branches_1ipc.tlv` | 42 | ~1 IPC branch handling |
-| `day5/complete_decode.tlv` | 44 | Full RV32I decode |
-| `day5/complete_alu.tlv` | 45 | Full ALU |
-| `day5/load_redirect.tlv` | 48 | Load shadow and PC redirect |
-| `day5/load_data.tlv` | 49 | Load write-back RF MUX |
-| `day5/dmem_connect.tlv` | 51 | DMem interface |
-| `day5/load_store_prog.tlv` | 52 | SW + LW test program |
-| `day5/jumps.tlv` | 53 | JAL / JALR support |
 
 ---
 
